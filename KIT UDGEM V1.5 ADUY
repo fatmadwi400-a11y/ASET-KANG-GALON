@@ -1,0 +1,46 @@
+local Players           = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- ===============================
+-- DUMMY LICENSE SYSTEM (SAFE)
+-- ===============================
+_G.LICENSE_SYSTEM = {
+	Valid        = true,
+	CreatorType  = "User",
+	CreatorId    = game.CreatorId,
+	CreatorName  = "LocalOwner",
+	LoaderActive = true,
+	LoaderReady  = true,
+	Version      = "1.0.8"
+}
+
+-- ===============================
+-- REMOTE (BIAR TIDAK ERROR)
+-- ===============================
+local licenseRemote = Instance.new("RemoteFunction")
+licenseRemote.Name   = "LicenseStatus"
+licenseRemote.Parent = ReplicatedStorage
+
+licenseRemote.OnServerInvoke = function(player)
+	return _G.LICENSE_SYSTEM
+end
+
+-- ===============================
+-- OPTIONAL DEBUG LOG
+-- ===============================
+print("✅ KANG GALO CRACK | Creator:", _G.LICENSE_SYSTEM.CreatorName)
+
+-- ===============================
+-- PROTECTION DIMATIKAN (NO SHUTDOWN)
+-- ===============================
+script.AncestryChanged:Connect(function()
+	if not script:IsDescendantOf(game) then
+		warn("License loader removed (ignored)")
+	end
+end)
+
+script:GetPropertyChangedSignal("Disabled"):Connect(function()
+	if script.Disabled then
+		warn("License loader disabled (ignored)")
+	end
+end)
