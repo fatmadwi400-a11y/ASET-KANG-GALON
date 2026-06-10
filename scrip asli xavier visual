@@ -1,0 +1,158 @@
+-- ============================================
+-- XAVIER KEY SYSTEM v2.0 - GitHub Raw
+-- ============================================
+
+-- ============================================
+-- 🔑 TARUH KEY KAMU DI SINI
+-- ============================================
+local VISUAL_KEYS = "Xaviervisual"  -- ganti dengan key kamu
+-- ============================================
+
+local CONFIG = {
+	KEYS_URL = "https://raw.githubusercontent.com/fatmadwi400-a11y/ASET-KANG-GALON/refs/heads/main/xaviervis",
+	TIKTOK   = "@KANGGALONSCRIP",
+	DISCORD  = "https://discord.gg/YaqNPnsPGu",
+}
+
+-- Services
+local HttpService       = game:GetService("HttpService")
+local Players           = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Global state
+_G.LICENSE_SYSTEM = {
+	Valid        = true,
+	LoaderActive = true,
+	LoaderReady  = true,
+	Version      = "2.0",
+}
+
+-- RemoteFunction untuk client query
+local remoteFunction = Instance.new("RemoteFunction")
+remoteFunction.Name   = "LicenseStatus"
+remoteFunction.Parent = ReplicatedStorage
+
+remoteFunction.OnServerInvoke = function(_player)
+	return { Valid = _G.LICENSE_SYSTEM.Valid }
+end
+
+-- ============================================
+-- FUNGSI: Kick semua player
+-- ============================================
+local function kickAllPlayers(reason)
+	local message = string.format(
+		"KEY TIDAK VALID\n%s\nHUB:\n📱 TikTok  : %s\n💬 Discord : %s",
+		reason, CONFIG.TIKTOK, CONFIG.DISCORD
+	)
+	for _, player in ipairs(Players:GetPlayers()) do
+		player:Kick(message)
+	end
+	Players.PlayerAdded:Connect(function(player)
+		player:Kick(message)
+	end)
+end
+
+-- ============================================
+-- FUNGSI: Shutdown
+-- ============================================
+local function shutdownGame(reason)
+	_G.LICENSE_SYSTEM.Valid        = false
+	_G.LICENSE_SYSTEM.LoaderActive = false
+	kickAllPlayers(reason)
+	for _, obj in ipairs(game:GetDescendants()) do
+		if (obj:IsA("Script") or obj:IsA("LocalScript")) and obj ~= script then
+			pcall(function() obj.Disabled = true end)
+		end
+	end
+end
+
+-- ============================================
+-- FUNGSI: Ambil keys dari GitHub
+-- ============================================
+local function fetchKeys()
+	local ok, result = pcall(function()
+		return HttpService:GetAsync(CONFIG.KEYS_URL, true)
+	end)
+	if not ok or not result then return nil end
+
+	local keys = {}
+	for line in result:gmatch("[^\r\n]+") do
+		local trimmed = line:match("^%s*(.-)%s*$")
+		if trimmed and trimmed ~= "" then
+			table.insert(keys, trimmed)
+		end
+	end
+	return keys
+end
+
+-- ============================================
+-- FUNGSI: Verifikasi VISUAL_KEYS ke GitHub
+-- ============================================
+local function verifyKey()
+	local keys = fetchKeys()
+	if not keys then
+		return nil, "Tidak bisa konek ke server key"
+	end
+
+	-- Cek apakah VISUAL_KEYS ada di list
+	for _, key in ipairs(keys) do
+		if key == VISUAL_KEYS then
+			return true
+		end
+	end
+
+	return false, "Key tidak terdaftar / tidak valid"
+end
+
+-- ============================================
+-- MAIN: Loop verifikasi dengan retry
+-- ============================================
+local MAX_RETRY = 20
+
+for attempt = 1, MAX_RETRY do
+	local result, errMsg = verifyKey()
+
+	if result == true then
+		_G.LICENSE_SYSTEM.Valid = true
+		print("✓ [KANG GALON] SCRIP BERJALAN")
+		break
+
+	elseif result == false then
+		shutdownGame(errMsg or "Key tidak terdaftar")
+		return
+
+	else
+		if attempt < MAX_RETRY then
+			print("⚠ [KEY] Retry " .. attempt .. "/" .. MAX_RETRY .. " - " .. (errMsg or "network error"))
+			task.wait(3)
+		else
+			shutdownGame("Tidak bisa verifikasi key - network error")
+			return
+		end
+	end
+end
+
+-- ============================================
+-- ANTI-TAMPER
+-- ============================================
+script.AncestryChanged:Connect(function()
+	if not script:IsDescendantOf(game) then
+		shutdownGame("Loader dihapus - bypass attempt")
+	end
+end)
+
+script:GetPropertyChangedSignal("Disabled"):Connect(function()
+	if script.Disabled then
+		shutdownGame("Loader dinonaktifkan - bypass attempt")
+	end
+end)
+
+-- ============================================
+-- LOAD CONFIG
+-- ============================================
+local Config = require(script:WaitForChild("Config"))
+Config.ButtonTemplate.Visible = false
+
+for _, videoData in ipairs(Config.Videos) do
+	require(script.Config:WaitForChild("Maininit")).CreateVideoPlayer(Config, videoData)
+end
