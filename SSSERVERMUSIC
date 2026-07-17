@@ -7,10 +7,10 @@ local oldRequire = require
 require = function(id)
     -- KALO MODULE SstudioServer DI-REQUIRE
     if tostring(id):find("SstudioServer") then
-        print("🔥 SstudioServer DETECTED - RETURNING FAKE")
+        
         return {
             hasProduct = function(productId)
-                print("🔥 hasProduct CALLED:", productId)
+            
                 return true  -- SELALU TRUE! GAK PEDULI PRODUCT ID
             end,
             -- FUNGSI LAIN YANG MUNGKIN DIPANGGIL
@@ -30,7 +30,7 @@ warn = function(msg, ...)
     if msg and (string.find(msg, "not found") or 
                 string.find(msg, "MusicServer") or
                 string.find(msg, "tidak terdaftar")) then
-        print("🔥 WARN BLOCKED:", msg)
+        
         return
     end
     return oldWarn(msg, ...)
